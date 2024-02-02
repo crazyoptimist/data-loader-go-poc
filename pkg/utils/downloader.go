@@ -7,6 +7,8 @@ import (
 	"os"
 )
 
+// Downloads a remote file with a very small memory footprint
+// using io.Copy
 func DownloadFile(outputFilePath string, url string) (err error) {
 
 	// Create the output file

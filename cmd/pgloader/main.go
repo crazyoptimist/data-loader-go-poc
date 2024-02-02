@@ -28,9 +28,15 @@ const (
 	// This is less than max conn because,
 	// we have some other connections like pgadmin, migration
 	NUM_WORKERS = 95
+	// Load only one million records from the dataset
+	NUM_RECORDS = 1e6
 )
 
-var dataHeaders []string
+var (
+	dataHeaders   []string
+	mu            sync.Mutex
+	completedJobs int
+)
 
 func main() {
 
@@ -97,49 +103,53 @@ func main() {
 	log.Printf("Done in %d seconds", int(math.Ceil(timeTaken.Seconds())))
 }
 
-func ExecuteJob(pool *pgxpool.Pool, values []interface{}) {
-	for {
-		query := fmt.Sprintf("INSERT INTO domain (%s) VALUES (%s);",
-			strings.Join(dataHeaders, ","),
-			utils.GeneratePlaceholder(len(values)),
-		)
+func RunInsert(pool *pgxpool.Pool, values []interface{}) {
 
-		_, err := pool.Exec(context.Background(), query, values...)
-		if err != nil {
-			log.Fatalln("Error while running INSERT query", err)
-		}
+	query := fmt.Sprintf("INSERT INTO domain (%s) VALUES (%s);",
+		strings.Join(dataHeaders, ","),
+		utils.GeneratePSQLPlaceholder(len(values)),
+	)
+
+	_, err := pool.Exec(context.Background(), query, values...)
+	if err != nil {
+		log.Fatalln("Error while running INSERT query", err)
 	}
+
+	mu.Lock()
+	completedJobs++
+	progress := float64(completedJobs) / float64(NUM_RECORDS) * 100
+	mu.Unlock()
+
+	utils.PrintProgress(&mu, progress)
 }
 
 func RunAllJobs(pool *pgxpool.Pool, jobs <-chan []interface{}, wg *sync.WaitGroup) {
 	for workerIndex := 0; workerIndex <= NUM_WORKERS; workerIndex++ {
-		go func(workerIndex int, pool *pgxpool.Pool, jobs <-chan []interface{}, wg *sync.WaitGroup) {
-			counter := 0
+
+		go func(pool *pgxpool.Pool, jobs <-chan []interface{}, wg *sync.WaitGroup) {
 
 			for job := range jobs {
-				ExecuteJob(pool, job)
+				RunInsert(pool, job)
 				wg.Done()
-				counter++
 			}
 
-		}(workerIndex, pool, jobs, wg)
+		}(pool, jobs, wg)
 	}
 }
 
 func DispatchJobs(reader *csv.Reader, jobs chan<- []interface{}, wg *sync.WaitGroup) {
-
 	defer close(jobs)
 
-	for {
+	for i := 0; i < NUM_RECORDS; i++ {
 		row, err := reader.Read()
 		if err != nil {
 			if err == io.EOF {
-				err = nil
+				break
 			}
 			log.Fatalln("Error while reading the CSV file: ", err)
 		}
 
-		// First row as dataHeaders (field names in db)
+		// First row as column names
 		if len(dataHeaders) == 0 {
 			dataHeaders = row
 			continue

@@ -20,7 +20,7 @@ func ConnectPostgres(connString string, maxConnNum int32) (*pgxpool.Pool, error)
 }
 
 // Prints the current connection stats to stdout
-func PrintPostgresStats(dbPool *pgxpool.Pool) {
+func PrintPGConnStats(dbPool *pgxpool.Pool) {
 
 	stats := dbPool.Stat()
 
@@ -30,7 +30,15 @@ func PrintPostgresStats(dbPool *pgxpool.Pool) {
 
 }
 
-func GeneratePlaceholder(num int) (placeholder string) {
+// Generates a query placeholder string for pgx
+// Parameters:
+//
+//	n: number of query arguments
+//
+// Returns:
+//
+//	query placeholder string
+func GeneratePSQLPlaceholder(num int) (placeholder string) {
 
 	for i := 1; i <= num; i++ {
 		if placeholder == "" {
