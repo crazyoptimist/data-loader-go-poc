@@ -19,3 +19,6 @@ go.work
 
 # CSV downloaded
 *.csv
+
+# Env file
+.env
