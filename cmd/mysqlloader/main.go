@@ -151,6 +151,7 @@ func RunInsert(db *sql.DB, values []interface{}) {
 }
 
 func RunAllJobs(db *sql.DB, jobs <-chan []interface{}, wg *sync.WaitGroup) {
+
 	for workerIndex := 0; workerIndex <= NUM_WORKER; workerIndex++ {
 
 		go func(db *sql.DB, jobs <-chan []interface{}, wg *sync.WaitGroup) {
@@ -174,7 +175,6 @@ func DispatchJobs(reader *csv.Reader, jobs chan<- []interface{}, wg *sync.WaitGr
 				break
 			}
 			log.Fatalln("Error while reading the CSV file: ", err)
-
 		}
 
 		if len(dataHeaders) == 0 {

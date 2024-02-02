@@ -124,6 +124,7 @@ func RunInsert(pool *pgxpool.Pool, values []interface{}) {
 }
 
 func RunAllJobs(pool *pgxpool.Pool, jobs <-chan []interface{}, wg *sync.WaitGroup) {
+
 	for workerIndex := 0; workerIndex <= NUM_WORKERS; workerIndex++ {
 
 		go func(pool *pgxpool.Pool, jobs <-chan []interface{}, wg *sync.WaitGroup) {

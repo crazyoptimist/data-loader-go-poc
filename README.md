@@ -1,5 +1,23 @@
-# Data Loader
+# Data Loader POC
 
-Download a large CSV file from the internet, and load the data into a Postgres DB.
+This is a proof of concept utilizing PostgreSQL/MySQL connection pooling along with Go's concurrency worker pool pattern.
 
-Utilize concurrency, and work pool connections to make it scalable.
+It downloads a CSV dataset file from the internet, and loads one million records into DB.
+
+### Instructions
+
+Run a PostgreSQL/MySQL database locally either using Docker or not.
+
+Create `.env` file from `.env.example`.
+
+Run
+
+```bash
+go run ./cmd/pgloader/main.go
+```
+
+```bash
+go run ./cmd/mysqlloader/main.go
+```
+
+[_crazyoptimist_](https://crazyoptimist.net)
